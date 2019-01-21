@@ -13,7 +13,7 @@
 #include <QHash>
 #include <QJsonObject>
 
-#include "dirhandler.h"
+#include "filemanager.h"
 
 
 //сделай обязательно деструктор
@@ -26,18 +26,23 @@ private:
     quint16 m_nNextBlockSize;
     QString pass;
 
-    DirHandler* d;
+    FileManager* fm;
 
     QHash<QString, QVariant> mToClient;
     QHash<QString, QVariant> mFromClient;
 private:
     void sendToClient(QTcpSocket* pSocket);
+protected:
+    virtual void closeEvent(QCloseEvent *ev) {
+        delete m_ptcpServer;
+        delete m_ptxt;
+        fm->~FileManager();
+    }
 public:
     Server(quint16 nPort, QString pass, QWidget* pwt = 0);
 public slots:
     virtual void slotNewConnection();
     void slotReadClient();
-//    void slotAuth();
 };
 
 #endif // SERVER_H

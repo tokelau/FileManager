@@ -18,19 +18,35 @@ void Layout::removeStartLayout(QLineEdit* pass, QTextEdit* m_ptxtInfo, QPushButt
 QListView* Layout::setListLayout(QList<QVariant>* names, QString path,
                                  QPushButton* _crFolder, QPushButton* _crFile) {
     listView = new QListView;
-    QStringListModel* model = new QStringListModel;
+    QStandardItemModel* model = new QStandardItemModel(names->count(), 1);
 
     listView->setMinimumHeight(300);
     listView->setMinimumWidth(500);
 
     listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    listView->setViewMode(QListView::IconMode);
 
-    QStringList* stringList = new QStringList;
+//    QStringList* stringList = new QStringList;
+    int i = 0;
     for (QList<QVariant>::iterator it = names->begin(); it < names->end(); it++) {
+        QModelIndex index = model->index(i, 0);
         QMap<QString, QVariant> item = (*it).toMap();
-        stringList->append(item.firstKey());
+        QString str = item.firstKey();
+        model->setData(index, str, Qt::DisplayRole);
+//        qDebug() << item.first().toString();
+        if (item.first().toString() == "folder") {
+            QDir dir;
+//            qDebug() <<dir.currentPath() + "/pic/folder.png";
+            model->setData(index, QIcon(dir.currentPath() + "/pic/folder.png"), Qt::DecorationRole);
+        } else {
+            QDir dir;
+            model->setData(index, QIcon(dir.currentPath() + "/pic/file.png"), Qt::DecorationRole);
+        }
+//        QListWidgetItem* lstItem = new QListWidgetItem(item, )
+//        stringList->append(item.firstKey());
+        i++;
     }
-    model->setStringList(*stringList);
+//    model->setStringList(*stringList);
     listView->setModel(model);
     info->clear();
     info = new QLabel("<center>" + path + "</center>");

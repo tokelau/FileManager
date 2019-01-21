@@ -21,6 +21,7 @@
 #include <QSignalMapper>
 
 #include "layout.h"
+#include "fileeditor.h"
 
 class Client : public QWidget
 {
@@ -157,6 +158,6 @@ public slots:
         mToServer.clear();
 //        qDebug() << layoutHandler->te->toPlainText();
     }
- };
+};
 
 #endif // CLIENT_H

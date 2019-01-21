@@ -15,6 +15,10 @@
 #include <QContextMenuEvent>
 #include <QDebug>
 #include <QInputDialog>
+#include <QListWidgetItem>
+#include <QStandardItemModel>
+#include <QModelIndex>
+#include <QIcon>
 
 class Layout : public QWidget
 {

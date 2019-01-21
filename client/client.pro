@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
     client.cpp \
-    layout.cpp
+    layout.cpp \
+    fileeditor.cpp
 
 HEADERS += \
     client.h \
-    layout.h
+    layout.h \
+    fileeditor.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

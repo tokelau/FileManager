@@ -2,7 +2,7 @@
 
 Server::Server(quint16 nPort, QString pass, QWidget* pwt /*= 0*/) : QWidget (pwt), m_nNextBlockSize(0)
 {
-    m_ptcpServer = new QTcpServer(this);
+    m_ptcpServer = new QTcpServer;
     if (!m_ptcpServer->listen(QHostAddress::Any, nPort)) {
         QMessageBox::critical(0, "Server Error", "Unable to start the server:"
                               + m_ptcpServer->errorString());
@@ -21,18 +21,12 @@ Server::Server(quint16 nPort, QString pass, QWidget* pwt /*= 0*/) : QWidget (pwt
     pvbxLayout->addWidget(m_ptxt);
     setLayout(pvbxLayout);
 
-    d = new DirHandler;
-    if (d->init()) {
-        m_ptxt->append("Server: Root directory successfully created.");
+    fm = new FileManager;
+    if (fm->init()) {
+        m_ptxt->append("Server: Root directory successfully created or refreshed.");
     } else {
         m_ptxt->append("Server: Wrong. Can't create root directory. Check admin rights.");
     }
-//    qDebug() << d->getSubDirs();
-//    qDebug() << d->getSubDirs();
-//    d->makeDir("empty");
-//    if (!d->rmDir("rootempty")) {
-//        m_ptxt->append("Server: Wrong. Folder does not exists.");
-//    }
 }
 
 void Server::slotNewConnection() {
@@ -40,8 +34,7 @@ void Server::slotNewConnection() {
     connect(pClientSocket, SIGNAL(disconnected()), pClientSocket, SLOT(deleteLater()));
     connect(pClientSocket, SIGNAL(readyRead()), this, SLOT(slotReadClient()));
 
-    mToClient.insert("info", "Server Response: Connected!");
-
+//    mToClient.insert("info", "Server Response: Connected!");
     sendToClient(pClientSocket);
 }
 
@@ -64,18 +57,18 @@ void Server::slotReadClient() {
 
         in >> mFromClient;
 
+
         if (mFromClient["auth"].toString() != pass) {
             mToClient.insert("auth", -2);
         } else {
+//            qDebug() << mFromClient["auth"].toString();
             mToClient.insert("auth", 1);
-            mToClient.insert("subfolders", d->getSubDirs());
-            mToClient.insert("path", d->getDir());
-        }
-        if (!mFromClient["message"].toString().isEmpty()) {
-            mToClient.insert("message", mFromClient["message"].toString());
+            mToClient.insert("subfolders", fm->getSubDirs());
+            mToClient.insert("path", fm->getDir());
         }
 
         QString strMessage;
+        QString message;
 
         if (!mFromClient["auth"].toString().isEmpty()) {
             strMessage = mFromClient["time"].toString() + " Recieved password: " + mFromClient["auth"].toString();
@@ -85,51 +78,57 @@ void Server::slotReadClient() {
         }
         if (!mFromClient["action"].toString().isEmpty()) {
             if (mFromClient["action"].toString() == "remove") {
-                d->rm(mFromClient["target"].toString());
-                mToClient.insert("subfolders", d->getSubDirs());
-                mToClient.insert("path", d->getDir());
+                if (fm->remove(mFromClient["target"].toString())) {
+                    mToClient.insert("subfolders", fm->getSubDirs());
+                    mToClient.insert("path", fm->getDir());
+                    message = "Successfully removed.";
+                }
+                message = "Successfully removed.";
             }
             if (mFromClient["action"].toString() == "goover") {
                 QString target = mFromClient["target"].toString();
-//                qDebug() << target;
-                if (d->getType(target) == NULL) {
-                    mToClient.insert("message", "Path does not exists.");
+                QString type = fm->getType(target);
+                if (type == NULL) {
+                    message = "Path does not exists.";
+//                    mToClient.insert("message", "Path does not exists.");
                 }
-                if (d->getType(target) == "folder") {
-                    d->goover(mFromClient["target"].toString());
-                    mToClient.insert("subfolders", d->getSubDirs());
-                    mToClient.insert("path", d->getDir());
+                if (type == "folder") {
+                    fm->goover(mFromClient["target"].toString());
+                    mToClient.insert("subfolders", fm->getSubDirs());
+                    mToClient.insert("path", fm->getDir());
                 }
-                if (d->getType(target) == "file") {
+                if (type == "file") {
                     mToClient.insert("title", target);
-                    mToClient.insert("filecontent", d->getFileContent(target));
+                    mToClient.insert("filecontent", fm->getFileContent(target));
                 }
             }
             if (mFromClient["action"].toString() == "save") {
-                d->saveFile(mFromClient["title"].toString(), mFromClient["filecontent"].toString());
-                mToClient.insert("message", "Successfully done.");
-//                qDebug() << mFromClient["filecontent"].toString();
+                if (fm->saveFile(mFromClient["title"].toString(), mFromClient["filecontent"].toString())) {
+                    message = "Successfully saved.";
+                }
+//                mToClient.insert("message", "Successfully saved.");
+                message = "Failed saving";
             }
             if (mFromClient["action"].toString() == "create") {
                 if (!mFromClient["folder"].toString().isEmpty()) {
-                    bool res = d->makeDir(mFromClient["folder"].toString());
+                    bool res = fm->makeDir(mFromClient["folder"].toString());
                     QString message = res ? "Successfully create folder." : "Problem: "
                                                                             "The folder already exists or another.";
-                    mToClient.insert("path", d->getDir());
+                    mToClient.insert("path", fm->getDir());
                 }
                 if (!mFromClient["file"].toString().isEmpty()) {
-                    bool res = d->makeFile(mFromClient["file"].toString() + ".txt");
+
+                    bool res = fm->makeFile(mFromClient["file"].toString() + ".txt");
                     QString message = res ? "Successfully create file." : "Problem: "
                                                                             "The file already exists or another.";
+                    qDebug() << message;
                 }
-                mToClient.insert("subfolders", d->getSubDirs());
-//                qDebug() << "folder:" <<mFromClient["folder"].toString();
-//                qDebug() << "file" << mFromClient["file"].toString() + ".txt";
+                mToClient.insert("subfolders", fm->getSubDirs());
             }
             strMessage = mFromClient["time"].toString() + " Recieved action: " + mFromClient["action"].toString();
-
         }
         m_ptxt->append(strMessage);
+        mToClient.insert("message", message);
 
         m_nNextBlockSize = 0;
 

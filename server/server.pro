@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2019-01-13T01:19:15
+# Project created by QtCreator 2019-01-19T03:02:54
 #
 #-------------------------------------------------
 
@@ -26,12 +26,12 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        server.cpp \
-    dirhandler.cpp
+        filemanager.cpp \
+    server.cpp
 
 HEADERS += \
-        server.h \
-    dirhandler.h
+        filemanager.h \
+    server.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
